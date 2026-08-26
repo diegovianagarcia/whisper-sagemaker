@@ -1,0 +1,33 @@
+# templates/iam-role.yaml
+# Role IAM que o SageMaker assume durante a inferência.
+# Trust policy permite apenas sagemaker.amazonaws.com.
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: Role
+metadata:
+  name: {{ .Values.iam.roleName | lower }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  forProvider:
+    name: {{ .Values.iam.roleName }}
+    description: "Role para o Whisper SageMaker Serverless Endpoint (gerenciada pelo Crossplane)"
+    assumeRolePolicy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "sagemaker.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+          }
+        ]
+      }
+    tags:
+      - key: ManagedBy
+        value: crossplane
+      - key: App
+        value: whisper-sagemaker
+  providerConfigRef:
+    name: {{ .Values.providerConfig.name }}

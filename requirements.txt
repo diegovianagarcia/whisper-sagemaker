@@ -1,0 +1,5 @@
+# Dependências locais (desenvolvimento e deploy)
+# As dependências de inferência (transformers, torch, soundfile) já vêm no DLC da AWS
+
+boto3==1.34.69
+sagemaker==2.210.0

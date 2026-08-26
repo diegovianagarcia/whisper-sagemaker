@@ -1,0 +1,25 @@
+# templates/providerconfig.yaml
+# Configura os providers Crossplane para usar IRSA (IAM Role for Service Account).
+# O Crossplane assume a role via anotação na ServiceAccount do controller.
+#
+# Providers necessários:
+#   - upbound/provider-aws-iam
+#   - upbound/provider-aws-s3
+#   - upbound/provider-aws-sagemaker
+#
+# Todos compartilham o mesmo ProviderConfig.
+apiVersion: aws.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: {{ .Values.providerConfig.name }}
+  annotations:
+    # Crossplane não gerencia o próprio ProviderConfig — não tem "owner" externo
+    argocd.argoproj.io/sync-wave: "-10"
+spec:
+  credentials:
+    source: IRSA
+  # Com IRSA, as credenciais vêm automaticamente do token da ServiceAccount.
+  # Basta que a ServiceAccount do provider tenha a anotação:
+  #   eks.amazonaws.com/role-arn: {{ .Values.providerConfig.irsaRoleArn }}
+  # Isso é configurado no Helm chart de instalação do Crossplane provider,
+  # não aqui. Este objeto apenas declara que o método é IRSA.

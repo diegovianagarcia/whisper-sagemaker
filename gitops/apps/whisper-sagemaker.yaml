@@ -1,0 +1,69 @@
+# apps/whisper-sagemaker.yaml
+# ArgoCD Application que aponta para o Helm chart deste repositório GitOps.
+# Ajuste repoURL, targetRevision e os valores de values conforme seu ambiente.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: whisper-sagemaker
+  namespace: argocd
+  annotations:
+    # Garante que a Application seja criada antes de qualquer recurso do chart
+    argocd.argoproj.io/sync-wave: "-20"
+spec:
+  project: default
+
+  source:
+    # Substitua pela URL do seu repositório GitOps
+    repoURL: https://github.com/your-org/whisper-sagemaker-gitops.git
+    targetRevision: main
+    path: charts/whisper-sagemaker
+
+    helm:
+      values: |
+        aws:
+          region: us-east-1
+          accountId: "123456789012"
+
+        providerConfig:
+          name: aws-provider-config
+          irsaRoleArn: "arn:aws:iam::123456789012:role/CrossplaneProviderRole"
+
+        iam:
+          roleName: SageMakerWhisperRole
+
+        s3:
+          bucketName: whisper-sagemaker-models
+          versioning: false
+
+        sagemaker:
+          endpointName: whisper-serverless
+          model:
+            name: whisper-serverless-model
+            imageUri: "763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-inference:2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04-v1.4"
+            modelS3Key: whisper-sagemaker/model/model.tar.gz
+            env:
+              HF_MODEL_ID: openai/whisper-small
+              HF_TASK: automatic-speech-recognition
+          endpointConfig:
+            name: whisper-serverless-config
+            memorySizeInMb: 3072
+            maxConcurrency: 3
+
+  destination:
+    server: https://kubernetes.default.svc
+    # Namespace onde os recursos Crossplane serão criados
+    namespace: whisper-sagemaker
+
+  syncPolicy:
+    automated:
+      prune: true       # remove recursos deletados do Git
+      selfHeal: true    # reconcilia drift automático
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true  # necessário para CRDs grandes do Crossplane
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

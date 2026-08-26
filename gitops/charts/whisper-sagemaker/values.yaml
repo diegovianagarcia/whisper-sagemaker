@@ -1,0 +1,47 @@
+# values.yaml — Whisper SageMaker Serverless
+# Todos os parâmetros que variam por ambiente/cluster.
+
+# ─── AWS ─────────────────────────────────────────────────────────────────────
+aws:
+  region: us-east-1
+  accountId: "123456789012"  # substitua pelo account ID real
+
+# ─── Crossplane ProviderConfig ────────────────────────────────────────────────
+providerConfig:
+  # Nome do ProviderConfig que será criado/referenciado por todos os recursos
+  name: aws-provider-config
+
+  # IRSA: ARN da role que o Crossplane vai assumir para provisionar recursos AWS
+  # Deve ter permissões de IAM, S3 e SageMaker
+  irsaRoleArn: "arn:aws:iam::123456789012:role/CrossplaneProviderRole"
+
+# ─── IAM ─────────────────────────────────────────────────────────────────────
+iam:
+  # Nome da role que o SageMaker vai assumir durante a inferência
+  roleName: SageMakerWhisperRole
+
+# ─── S3 ──────────────────────────────────────────────────────────────────────
+s3:
+  bucketName: whisper-sagemaker-models
+  # Versioning desabilitado por padrão (arquivos de modelo são imutáveis por nome)
+  versioning: false
+
+# ─── SageMaker ───────────────────────────────────────────────────────────────
+sagemaker:
+  endpointName: whisper-serverless
+
+  model:
+    name: whisper-serverless-model
+    # Imagem HF DLC — pytorch 2.1 + transformers 4.37 + cpu + python 3.10
+    imageUri: "763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-inference:2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04-v1.4"
+    # Caminho do model.tar.gz no S3 (relativo ao bucket configurado acima)
+    modelS3Key: whisper-sagemaker/model/model.tar.gz
+    env:
+      HF_MODEL_ID: openai/whisper-small
+      HF_TASK: automatic-speech-recognition
+
+  endpointConfig:
+    name: whisper-serverless-config
+    # whisper-small → 3072 MB | whisper-medium → 6144 MB
+    memorySizeInMb: 3072
+    maxConcurrency: 3

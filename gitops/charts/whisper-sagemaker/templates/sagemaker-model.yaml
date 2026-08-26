@@ -1,0 +1,33 @@
+# templates/sagemaker-model.yaml
+# SageMaker Model que referencia a imagem DLC do HuggingFace e o model.tar.gz no S3.
+# Depende da IAM Role e do bucket S3 (sync-wave 0 após IAM na wave -4/-5).
+apiVersion: sagemaker.aws.upbound.io/v1beta1
+kind: Model
+metadata:
+  name: {{ .Values.sagemaker.model.name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  forProvider:
+    region: {{ .Values.aws.region }}
+    name: {{ .Values.sagemaker.model.name }}
+    # ARN da role IAM gerenciada pelo Crossplane neste mesmo chart.
+    # O crossplane-provider-aws-sagemaker aceita referência direta por ARN ou por ref.
+    executionRoleArnSelector:
+      matchControllerRef: false
+    executionRoleArnRef:
+      # Referencia o objeto Role pelo nome do recurso Crossplane (metadata.name)
+      name: {{ .Values.iam.roleName | lower }}
+    primaryContainer:
+      - image: {{ .Values.sagemaker.model.imageUri }}
+        modelDataUrl: "s3://{{ .Values.s3.bucketName }}/{{ .Values.sagemaker.model.modelS3Key }}"
+        environment:
+          HF_MODEL_ID: {{ .Values.sagemaker.model.env.HF_MODEL_ID }}
+          HF_TASK: {{ .Values.sagemaker.model.env.HF_TASK }}
+    tags:
+      - key: ManagedBy
+        value: crossplane
+      - key: App
+        value: whisper-sagemaker
+  providerConfigRef:
+    name: {{ .Values.providerConfig.name }}

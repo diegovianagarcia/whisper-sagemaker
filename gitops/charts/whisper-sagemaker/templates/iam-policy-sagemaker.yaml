@@ -1,0 +1,57 @@
+# templates/iam-policy-sagemaker.yaml
+# Policy inline com permissões mínimas de SageMaker, ECR e CloudWatch Logs.
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: RolePolicy
+metadata:
+  name: {{ .Values.iam.roleName | lower }}-sagemaker
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+spec:
+  forProvider:
+    name: SageMakerWhisperInference
+    roleRef:
+      name: {{ .Values.iam.roleName | lower }}
+    policy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "SageMakerInference",
+            "Effect": "Allow",
+            "Action": [
+              "sagemaker:CreateModel",
+              "sagemaker:CreateEndpointConfig",
+              "sagemaker:CreateEndpoint",
+              "sagemaker:UpdateEndpoint",
+              "sagemaker:DeleteEndpoint",
+              "sagemaker:DeleteEndpointConfig",
+              "sagemaker:DeleteModel",
+              "sagemaker:DescribeEndpoint",
+              "sagemaker:InvokeEndpoint"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Sid": "ECRPullImage",
+            "Effect": "Allow",
+            "Action": [
+              "ecr:GetDownloadUrlForLayer",
+              "ecr:BatchGetImage",
+              "ecr:GetAuthorizationToken"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Sid": "CloudWatchLogs",
+            "Effect": "Allow",
+            "Action": [
+              "logs:CreateLogGroup",
+              "logs:CreateLogStream",
+              "logs:PutLogEvents"
+            ],
+            "Resource": "arn:aws:logs:*:*:log-group:/aws/sagemaker/*"
+          }
+        ]
+      }
+  providerConfigRef:
+    name: {{ .Values.providerConfig.name }}

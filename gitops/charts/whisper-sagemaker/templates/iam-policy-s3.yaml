@@ -1,0 +1,38 @@
+# templates/iam-policy-s3.yaml
+# Policy inline que restringe o acesso da role SageMaker ao bucket específico do Whisper.
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: RolePolicy
+metadata:
+  name: {{ .Values.iam.roleName | lower }}-s3
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+spec:
+  forProvider:
+    name: S3WhisperBucketAccess
+    roleSelector:
+      matchControllerRef: false
+      matchLabels: {}
+    roleRef:
+      name: {{ .Values.iam.roleName | lower }}
+    policy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "S3WhisperBucket",
+            "Effect": "Allow",
+            "Action": [
+              "s3:GetObject",
+              "s3:PutObject",
+              "s3:DeleteObject",
+              "s3:ListBucket"
+            ],
+            "Resource": [
+              "arn:aws:s3:::{{ .Values.s3.bucketName }}",
+              "arn:aws:s3:::{{ .Values.s3.bucketName }}/*"
+            ]
+          }
+        ]
+      }
+  providerConfigRef:
+    name: {{ .Values.providerConfig.name }}

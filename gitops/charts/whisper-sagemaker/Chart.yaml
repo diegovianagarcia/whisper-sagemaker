@@ -1,0 +1,16 @@
+apiVersion: v2
+name: whisper-sagemaker
+description: Provisiona o Whisper SageMaker Serverless Endpoint via Crossplane (Upbound modular providers + IRSA)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+keywords:
+  - whisper
+  - sagemaker
+  - serverless
+  - crossplane
+  - aws
+
+maintainers:
+  - name: platform-team

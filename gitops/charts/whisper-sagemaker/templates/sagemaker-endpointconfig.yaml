@@ -1,0 +1,27 @@
+# templates/sagemaker-endpointconfig.yaml
+# EndpointConfig serverless — referencia o Model e define memória/concorrência.
+apiVersion: sagemaker.aws.upbound.io/v1beta1
+kind: EndpointConfiguration
+metadata:
+  name: {{ .Values.sagemaker.endpointConfig.name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  forProvider:
+    region: {{ .Values.aws.region }}
+    name: {{ .Values.sagemaker.endpointConfig.name }}
+    productionVariants:
+      - variantName: AllTraffic
+        # Referencia o Model pelo nome do recurso Crossplane
+        modelNameRef:
+          name: {{ .Values.sagemaker.model.name }}
+        serverlessConfig:
+          - memorySizeInMb: {{ .Values.sagemaker.endpointConfig.memorySizeInMb }}
+            maxConcurrency: {{ .Values.sagemaker.endpointConfig.maxConcurrency }}
+    tags:
+      - key: ManagedBy
+        value: crossplane
+      - key: App
+        value: whisper-sagemaker
+  providerConfigRef:
+    name: {{ .Values.providerConfig.name }}

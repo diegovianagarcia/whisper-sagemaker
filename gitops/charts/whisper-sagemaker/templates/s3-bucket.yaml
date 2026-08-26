@@ -1,0 +1,55 @@
+# templates/s3-bucket.yaml
+# Bucket S3 para armazenar o model.tar.gz do Whisper.
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: Bucket
+metadata:
+  name: {{ .Values.s3.bucketName }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  forProvider:
+    region: {{ .Values.aws.region }}
+    tags:
+      ManagedBy: crossplane
+      App: whisper-sagemaker
+  providerConfigRef:
+    name: {{ .Values.providerConfig.name }}
+---
+# Bloqueia acesso público ao bucket — o SageMaker acessa via role, não publicamente
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketPublicAccessBlock
+metadata:
+  name: {{ .Values.s3.bucketName }}-public-access-block
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  forProvider:
+    region: {{ .Values.aws.region }}
+    bucketSelector:
+      matchControllerRef: false
+    bucketRef:
+      name: {{ .Values.s3.bucketName }}
+    blockPublicAcls: true
+    blockPublicPolicy: true
+    ignorePublicAcls: true
+    restrictPublicBuckets: true
+  providerConfigRef:
+    name: {{ .Values.providerConfig.name }}
+{{- if .Values.s3.versioning }}
+---
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketVersioning
+metadata:
+  name: {{ .Values.s3.bucketName }}-versioning
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  forProvider:
+    region: {{ .Values.aws.region }}
+    bucketRef:
+      name: {{ .Values.s3.bucketName }}
+    versioningConfiguration:
+      - status: Enabled
+  providerConfigRef:
+    name: {{ .Values.providerConfig.name }}
+{{- end }}

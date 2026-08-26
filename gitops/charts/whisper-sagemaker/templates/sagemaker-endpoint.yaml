@@ -1,0 +1,23 @@
+# templates/sagemaker-endpoint.yaml
+# Endpoint serverless — último recurso a ser criado (sync-wave 2).
+# O Crossplane aguarda o EndpointConfig estar Ready antes de criar o Endpoint.
+apiVersion: sagemaker.aws.upbound.io/v1beta1
+kind: Endpoint
+metadata:
+  name: {{ .Values.sagemaker.endpointName }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  forProvider:
+    region: {{ .Values.aws.region }}
+    name: {{ .Values.sagemaker.endpointName }}
+    # Referencia o EndpointConfig pelo nome do recurso Crossplane
+    endpointConfigNameRef:
+      name: {{ .Values.sagemaker.endpointConfig.name }}
+    tags:
+      - key: ManagedBy
+        value: crossplane
+      - key: App
+        value: whisper-sagemaker
+  providerConfigRef:
+    name: {{ .Values.providerConfig.name }}
